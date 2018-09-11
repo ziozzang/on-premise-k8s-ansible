@@ -1,6 +1,5 @@
 # TL;DR
-* Get Latest Version and packing into Docker images(based on busybox).
-* Run K8S with Docker in Docker. (Self Dockerized installations)
+* Install/upgrade K8S with Docker in Docker. (Self Dockerized installations)
 * No dependancy about Host OS.
 * No dependancy about .....
 
@@ -9,6 +8,8 @@
 # Usages
 * just run get_latest.sh
 * You can run with crontab or something for updating.. :)
+
+* WIP: check example_script for usage
 
 ```
 # if some parameter exist, script will use it.
