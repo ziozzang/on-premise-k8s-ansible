@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # This is sample script to build
 CNI_VERSION="v0.7.1"  ./get_latest.sh
 docker save kubebins > kubebins.tar

@@ -22,15 +22,10 @@ docker_save() {
   if [[ -f "images/${FNAME}" ]]; then
     echo ">> File Exist. Skipping => images/${FNAME}"
   else
-    if [ `echo "${TAGS}" | grep -E '(-mip|-arm|-ppc|-s390)' | wc -l` -gt "0" ]; then
-      # Skipping if not amd64 or x86_64
-      echo ">> Target Image is not for x86_64. Skipping => ${TAGS}"
-    else
-      echo ">> Saving: ${TAGS} => images/${FNAME}"
-      docker pull ${TAGS}
-      docker save ${TAGS} | gzip > "./images/${FNAME}"
-      docker rmi -f ${TAGS}
-    fi
+    echo ">> Saving: ${TAGS} => images/${FNAME}"
+    docker pull ${TAGS}
+    docker save ${TAGS} | gzip > "./images/${FNAME}"
+    docker rmi -f ${TAGS}
   fi
 }
 
@@ -117,7 +112,7 @@ cd "${CURRENT_DIR}"
 #- Generate temporary files
 TEMP_FILES=$(mktemp /tmp/output.XXXXXXXXXX)
 
-grep -H 'image\:' ./pkg/* ./pkg_dl/* | awk '{print $3}' > ${TEMP_FILES}
+grep -HR 'image\:' ./pkg/ ./pkg_dl/ | grep -v -E '(-mip|-arm|-ppc|-s390)' | awk '{print $3}' > ${TEMP_FILES}
 
 #- Fetch / package
 while read p; do

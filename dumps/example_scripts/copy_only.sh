@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script is sample master build
+# This script is push binary only
 
 LOG_FILE=$(mktemp /tmp/output.XXXXXXXXXX)
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -28,22 +28,3 @@ fi
 
 # Restart
 swapoff -a
-kubeadm init | tee ${LOG_FILE}
-
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
-cd /opt/pkg
-
-PKG_FILE=$(mktemp /tmp/output.XXXXXXXXXX)
-ls > "${PKG_FILE}"
-while read p; do
-  kubectl create -f ${p}
-done < "${PKG_FILE}"
-rm -f "${PKG_FILE}"
-
-cd "${CURRENT_DIR}"
-LOGS=`grep "kubeadm join" ${LOG_FILE}`
-echo "RUN>> ${LOGS}"
-echo "${LOGS}" > join_cmd.log
