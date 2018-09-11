@@ -1,3 +1,6 @@
+#
+# Packages install automatically
+#
 # Weave Scope (Latest)
 https://cloud.weave.works/k8s/scope.yaml?v=latest
 # Kubernetes Dashboard (Latest)

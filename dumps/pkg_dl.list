@@ -1,3 +1,6 @@
+#
+# Packages no automatic install & download only
+#
 # Calico (v3.2)
 https://docs.projectcalico.org/v3.2/getting-started/kubernetes/installation/hosted/etcd.yaml
 https://docs.projectcalico.org/v3.2/getting-started/kubernetes/installation/rbac.yaml
