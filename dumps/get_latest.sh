@@ -14,16 +14,23 @@ get_latest_release() {
 }
 
 docker_save() {
-  TAGS="$1"
+  # Strip ' or " character
+  TAGS=`echo "$1" | sed "s/'//g" | sed 's/"//g'`
+  # Replace : or / to _ (Docker tags are converted into plain file name)
   FNAME=`echo "${TAGS}.tgz" | tr '\:\/' _`
 
   if [[ -f "images/${FNAME}" ]]; then
     echo ">> File Exist. Skipping => images/${FNAME}"
   else
-    echo ">> Saving: ${TAGS} => images/${FNAME}"
-    docker pull ${TAGS}
-    docker save ${TAGS} | gzip > "./images/${FNAME}"
-    docker rmi -f ${TAGS}
+    if [ `echo "${TAGS}" | grep -E '(-mip|-arm|-ppc|-s390)' | wc -l` -gt "0" ]; then
+      # Skipping if not amd64 or x86_64
+      echo ">> Target Image is not for x86_64. Skipping => ${TAGS}"
+    else
+      echo ">> Saving: ${TAGS} => images/${FNAME}"
+      docker pull ${TAGS}
+      docker save ${TAGS} | gzip > "./images/${FNAME}"
+      docker rmi -f ${TAGS}
+    fi
   fi
 }
 
@@ -119,20 +126,6 @@ done < ${TEMP_FILES}
 
 #- Remove temporary file
 rm -f "${TEMP_FILES}"
-
-# Get Additional Containers
-#TODO/WIP
-#docker pull weaveworks/weave-npc:1.8.2
-#docker pull weaveworks/weave-kube:1.8.2
-#https://github.com/kubernetes/kubernetes/blob/master/cluster/addons/addon-manager/Makefile -> VERSION
-#docker pull gcr.io/google-containers/kube-addon-manager:v6.1
-#docker pull gcr.io/google_containers/dnsmasq-metrics-amd64:1.0
-#docker pull gcr.io/google_containers/kubedns-amd64:1.8
-#docker pull gcr.io/google_containers/kube-dnsmasq-amd64:1.4
-#docker pull gcr.io/google_containers/kube-discovery-amd64:1.0
-#docker pull quay.io/coreos/flannel-git:v0.6.1-28-g5dde68d-amd64
-#docker pull gcr.io/google_containers/exechealthz-amd64:1.2
-
 
 # Fetch for Support Binary(Esp. Static compiled bins)
 curl -o ./opt/bin/socat https://github.com/andrew-d/static-binaries/raw/master/binaries/linux/x86_64/socat && chmod +x ./opt/bin/socat
