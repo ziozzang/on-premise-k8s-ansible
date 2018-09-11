@@ -35,9 +35,3 @@ docker run \
 * CRICTL_VERSION: fetch from https://github.com/kubernetes-incubator/cri-tools/
 * KUBE_RELEASE: fetch from https://storage.googleapis.com/kubernetes-release/
 
-## Extract from container images
-* You can run just like this
-
-```
-docker run --rm -it -v `pwd`/tmp/:/tmp kubebins sh -c "mkdir -p /tmp/etc && cp -rvf /opt /tmp/ && cp -rvf /etc/systemd /tmp/etc/"
-```
