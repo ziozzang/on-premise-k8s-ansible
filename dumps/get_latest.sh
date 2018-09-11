@@ -16,20 +16,30 @@ get_latest_release() {
 docker_save() {
   TAGS="$1"
   FNAME=`echo "${TAGS}.tgz" | tr '\:\/' _`
-  echo ">> Saving: ${TAGS} => images/${FNAME}"
-  docker pull ${TAGS}
-  docker save ${TAGS} | gzip > "./images/${FNAME}"
-  docker rmi -f ${TAGS}
+
+  if [[ -f "images/${FNAME}" ]]; then
+    echo ">> File Exist. Skipping => images/${FNAME}"
+  else
+    echo ">> Saving: ${TAGS} => images/${FNAME}"
+    docker pull ${TAGS}
+    docker save ${TAGS} | gzip > "./images/${FNAME}"
+    docker rmi -f ${TAGS}
+  fi
 }
 
 # Remove temporary directorys
-rm -rf ./etc ./opt
+rm -rf ./etc ./opt ./pkg ./pkg_dl
 
 # Remove unused container images
 docker images | awk '{print $3}' | xargs docker rmi -f
 
 # make dirs
-mkdir -p ./opt/cni/bin ./opt/bin ./etc/systemd/system/kubelet.service.d/
+# > pkg: packages to install
+# > pkg_dl: packages to download only
+# > images: downloaded images
+# > /opt/bin: binaries
+# > /etc: systemd files
+mkdir -p ./pkg ./pkg_dl ./images ./opt/cni/bin ./opt/bin ./etc/systemd/system/kubelet.service.d/
 
 # Get Latest busybox binary
 docker pull busybox
@@ -81,11 +91,34 @@ done < ${TEMP_FILES}
 rm -f "${TEMP_FILES}"
 
 
-# Get Kubernetes Dashboard
-DASHBOARD_RELEASE_TMP=`get_latest_release kubernetes/dashboard`
-DASHBOARD_RELEASE="${DASHBOARD_RELEASE:-${DASHBOARD_RELEASE_TMP}}"
-echo "> DASHBOARD VERSION: ${DASHBOARD_RELEASE}"
-docker_save gcr.io/google_containers/kubernetes-dashboard-amd64:${DASHBOARD_RELEASE}
+# Get Kubernetes Packages
+if [[ -f "pkg.list" ]]; then
+  cd "${CURRENT_DIR}/pkg"
+  grep . ../pkg.list | grep -v -e "^#" | xargs -I X curl --location -J -O X
+  cd "${CURRENT_DIR}"
+fi
+
+if [[ -f "pkg_dl.list" ]]; then
+  cd "${CURRENT_DIR}/pkg_dl"
+  grep . ../pkg_dl.list | grep -v -e "^#" | xargs -I X curl --location -J -O X
+  cd "${CURRENT_DIR}"
+fi
+
+# Get Pkg's images
+cd "${CURRENT_DIR}"
+
+#- Generate temporary files
+TEMP_FILES=$(mktemp /tmp/output.XXXXXXXXXX)
+
+grep -H 'image\:' ./pkg/* ./pkg_dl/* | awk '{print $3}' > ${TEMP_FILES}
+
+#- Fetch / package
+while read p; do
+  docker_save ${p}
+done < ${TEMP_FILES}
+
+#- Remove temporary file
+rm -f "${TEMP_FILES}"
 
 # Get Additional Containers
 #TODO/WIP
@@ -101,9 +134,7 @@ docker_save gcr.io/google_containers/kubernetes-dashboard-amd64:${DASHBOARD_RELE
 #docker pull gcr.io/google_containers/exechealthz-amd64:1.2
 
 
-# Fetch Services files. (for systemd)
-cd "${CURRENT_DIR}"
-curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${KUBE_RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ./etc/systemd/system/kubelet.service
-curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${KUBE_RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ./etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+# Fetch for Support Binary(Esp. Static compiled bins)
+curl -o ./opt/bin/socat https://github.com/andrew-d/static-binaries/raw/master/binaries/linux/x86_64/socat && chmod +x ./opt/bin/socat
 
 docker build -t "${DOCKER_IMAGE_TAG}" .

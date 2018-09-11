@@ -1,0 +1,5 @@
+# Weave Scope (Latest)
+https://cloud.weave.works/k8s/scope.yaml?v=latest
+# Kubernetes Dashboard (Latest)
+https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+
