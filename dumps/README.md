@@ -14,6 +14,19 @@
 ```
 # if some parameter exist, script will use it.
 CNI_VERSION="v0.7.1" ./get_latest.sh
+
+```
+
+## Setup at Host
+
+```
+# Use with Docker (Just RUN!)
+docker run \
+  --rm -it \
+  --privileged \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /:/host \
+  kubebins
 ```
 
 ## Parameters
