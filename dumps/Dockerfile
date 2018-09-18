@@ -10,4 +10,5 @@ COPY ./etc /files/etc
 COPY ./images /images
 COPY ./pkg /files/opt/pkg
 COPY ./pkg_dl /files/opt/pkg_dl
+RUN echo "kubernetesVersion: `/files/opt/bin/kubeadm version -o short | sed 's:v::g'`" > /files/opt/config.yml
 ENTRYPOINT bash /files/bin/entrypoint.sh

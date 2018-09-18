@@ -28,7 +28,7 @@ fi
 
 # Restart
 swapoff -a
-kubeadm init | tee ${LOG_FILE}
+kubeadm init --config=/opt/config.yml | tee ${LOG_FILE}
 
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
