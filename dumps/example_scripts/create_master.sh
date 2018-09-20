@@ -1,5 +1,8 @@
 #!/bin/bash
 # This script is sample master build
+DOCKER_TAGS=${DOCKER_TAGS:-"kubebins"}
+POD_NETWORK_CIDR=${POD_NETWORK_CIDR:-"100.64.0.0/10"}
+
 
 LOG_FILE=$(mktemp /tmp/output.XXXXXXXXXX)
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -8,7 +11,10 @@ CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 kubeadm reset -f
 rm -fr $HOME/.kube logs
 docker images | awk '{print $3}' | xargs docker rmi -f
-docker load < /tmp/kubebins.tar
+
+# Docker image pull or load from files. anything?
+docker pull ${DOCKER_TAGS}
+#docker load < /tmp/kubebins.tar
 
 # Copy & Dump files
 docker run \
@@ -16,7 +22,11 @@ docker run \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /:/host \
   --privileged \
-  kubebins
+  ${DOCKER_TAGS}
+
+# Set IP based Hostname
+IP=`hostname -i | awk '{print $1}' | tr '\.' -`
+hostname "host-${IP}"
 
 if [ `echo "${PATH}" | grep "/opt/bin" | wc -l` -eq "0" ]; then
   export PATH=$PATH:/opt/bin
@@ -27,8 +37,11 @@ if [ `grep 'PATH' ~/.bashrc | grep '/opt/bin' | wc -l` -eq "0" ]; then
 fi
 
 # Restart
-swapoff -a
-kubeadm init --config=/opt/config.yml | tee ${LOG_FILE}
+VERS=`cat /opt/config.yml | awk '{print $2}'`
+kubeadm init \
+  --pod-network-cidr="${POD_NETWORK_CIDR}" \
+  --kubernetes-version="${VERS}" \
+  | tee ${LOG_FILE}
 
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
@@ -42,6 +55,11 @@ while read p; do
   kubectl create -f ${p}
 done < "${PKG_FILE}"
 rm -f "${PKG_FILE}"
+
+# Create CNI(Network)
+#kubectl apply -f /opt/pkg_dl/rbac.yaml
+#kubectl apply -f /opt/pkg_dl/calico.yaml
+
 
 cd "${CURRENT_DIR}"
 LOGS=`grep "kubeadm join" ${LOG_FILE}`
