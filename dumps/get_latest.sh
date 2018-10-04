@@ -66,11 +66,17 @@ echo "Kube* tools version: ${KUBE_RELEASE}"
 
 #- Fetch Services files. (for systemd)
 cd "${CURRENT_DIR}"
-curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${KUBE_RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ./etc/systemd/system/kubelet.service
-curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${KUBE_RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ./etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${KUBE_RELEASE}/build/debs/kubelet.service" | \
+  sed "s:/usr/bin:/opt/bin:g" | \
+  sed "s:^ExecStart=:ExecStartPre=/opt/bin/kubelet.pre"$'\\\n'"ExecStart=:g" \
+   > ./etc/systemd/system/kubelet.service
+curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${KUBE_RELEASE}/build/debs/10-kubeadm.conf" | \
+  sed "s:/usr/bin:/opt/bin:g" \
+   > ./etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 
 #- Fetch kubeadm, kubelet, kubectl
 cd ./opt/bin
+cp -f "${CURRENT_DIR}/kubelet.pre" .
 curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${KUBE_RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
 chmod +x {kubeadm,kubelet,kubectl}
 

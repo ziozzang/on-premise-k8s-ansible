@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ "$(id -u)" != "0" ]; then
+   echo "kubelet.pre must run as root" 1>&2
+   exit 1
+fi
+
+# Force Swap Off
+swapoff -a
+
+# Set Hostname.
+IP=`echo "${IPADDR}" | awk '{print $1}' | tr '\.' -`
+hostname "host-${IP}"
+
+exit 0
