@@ -27,6 +27,7 @@ docker run \
 # Set IP based Hostname
 IP=`hostname -i | awk '{print $1}' | tr '\.' -`
 hostname "host-${IP}"
+echo "host-${IP}" > /etc/hostname
 
 if [ `echo "${PATH}" | grep "/opt/bin" | wc -l` -eq "0" ]; then
   export PATH=$PATH:/opt/bin
