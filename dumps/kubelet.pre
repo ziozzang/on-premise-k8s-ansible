@@ -9,6 +9,7 @@ fi
 swapoff -a
 
 # Set Hostname.
+IPADDR=`ip route get 1 | awk '{print $NF;exit}'`
 IP=`echo "${IPADDR}" | awk '{print $1}' | tr '\.' -`
 hostname "host-${IP}"
 
