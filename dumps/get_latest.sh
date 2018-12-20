@@ -87,7 +87,7 @@ TEMP_FILES=$(mktemp /tmp/output.XXXXXXXXXX)
 #- Get current kubernetes image list
 cd "${CURRENT_DIR}"
 docker run --rm -v `pwd`/opt/bin/:/opt/bin \
-  alpine sh -c "apk update >/dev/null && apk add -f curl wget >/dev/null && /opt/bin/kubeadm config images list" \
+  alpine sh -c "apk update >/dev/null && apk add -f curl wget >/dev/null && /opt/bin/kubeadm config images list --kubernetes-version '${KUBE_RELEASE}'" \
   > ${TEMP_FILES}
 
 #- Fetch / package
