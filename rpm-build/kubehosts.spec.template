@@ -1,0 +1,136 @@
+%define build_timestamp %(date +"%Y%m%d")
+
+Summary: kubehosts newest-package
+Name: kubehosts
+Version: _KUBE_RELEASE_
+Release: %{build_timestamp}
+License: Copyright info
+Group: Applications/System
+%description
+Kubernetes/K8S for Centos/RHEL 7 Hosts(For Offline installation)
+- RPM repacked by Jioh L. Jung (ziozzang@gmail.com)
+
+####################################################
+%prep
+# Prepare for build process.
+
+%build
+%install
+get_latest_release() {
+  curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
+    grep '"tag_name":' |                                            # Get tag line
+    sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
+}
+
+
+CURRENT_DIR=`pwd`
+echo "PWD: ${CURRENT_DIR}"
+# Make Directories
+
+mkdir -p ${RPM_BUILD_ROOT}/usr/bin
+mkdir -p ${RPM_BUILD_ROOT}/etc/systemd/system/
+mkdir -p ${RPM_BUILD_ROOT}/etc/systemd/system/kubelet.service.d/
+mkdir -p ${RPM_BUILD_ROOT}/etc/kubernetes/bin
+mkdir -p ${RPM_BUILD_ROOT}/usr/local/bin
+
+# Fetch CNI
+CNI_VERSION="${CNI_VERSION:-$(get_latest_release "containernetworking/plugins")}"
+echo "Latest CNI Version: ${CNI_VERSION}"
+curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" | \
+  tar -C ${RPM_BUILD_ROOT}/usr/local/bin -xz
+
+# Fetch CRICTL
+CRICTL_VERSION="${CRICTL_VERSION:-$(get_latest_release "kubernetes-sigs/cri-tools")}"
+echo "Latest CRICTL version: ${CRICTL_VERSION}"
+curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" | \
+  tar -C ${RPM_BUILD_ROOT}/usr/bin -xz
+
+# Fetch kube*
+KUBE_RELEASE="${KUBE_RELEASE:-$(curl -sSL https://dl.k8s.io/release/stable.txt)}"
+echo "Kube* tools version: ${KUBE_RELEASE}"
+
+#- Fetch Services files. (for systemd)
+
+cd "${CURRENT_DIR}"
+curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${KUBE_RELEASE}/build/debs/kubelet.service" | \
+  sed "s:^ExecStart=:ExecStartPre=/etc/kubernetes/bin/kubelet.prepare"$'\\\n'"ExecStart=:g" | \
+  cat > ${RPM_BUILD_ROOT}/etc/systemd/system/kubelet.service
+curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${KUBE_RELEASE}/build/debs/10-kubeadm.conf" | \
+  cat > ${RPM_BUILD_ROOT}/etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+#- Copy kubelet prepare.
+cp -f ../../kubelet.prepare ${RPM_BUILD_ROOT}/etc/kubernetes/bin/
+
+#- Fetch kubeadm, kubelet, kubectl
+curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${KUBE_RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
+chmod +x {kubeadm,kubelet,kubectl}
+mv {kubeadm,kubelet,kubectl} ${RPM_BUILD_ROOT}/usr/bin
+
+####################################################
+
+####################################################
+%clean
+# After Build, clean up env.
+#rm -rf $RPM_BUILD_ROOT
+
+####################################################
+%files
+%defattr(-,root,root)
+%attr(0755,root,root)/usr/bin/*
+%attr(0755,root,root)/usr/local/bin/*
+%attr(0600,root,root)/etc/systemd/system/kubelet.service
+%attr(0600,root,root)/etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+%attr(0700,root,root)/etc/kubernetes/bin/kubelet.prepare
+
+####################################################
+%pre
+systemctl stop firewalld || true
+systemctl disable firewalld || true
+systemctl restart docker || true
+
+#rm -rf /etc/kubernetes /var/lib/etcd || true
+
+%post
+
+echo ">> Inside Post Process <<"
+systemctl enable kubelet
+#systemctl
+
+
+####################################################
+%preun
+
+# CleanUp Old configuration
+#kubeadm reset -f || true
+#weave reset --force || true
+
+systemctl stop kubelet || true
+systemctl disable kubelet || true
+systemctl stop docker || true
+
+rm -rf /root/.kube
+rm -rf /root/.helm
+rm -rf /root/.token
+rm -rf /etc/cni/
+rm -rf /var/lib/cni/
+rm -rf /var/lib/kubelet/*
+rm -rf /var/lib/romana/
+
+# SELinux Turn-off
+#=> https://kubernetes.io/docs/setup/independent/install-kubeadm/
+setenforce 0
+sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+%postun
+echo ">> Inside Uninstall Process <<"
+rm -rf /etc/kubernetes/
+systemctl start docker || true
+
+####################################################
+%changelog
+* _DATES_HERE_ Jioh L. Jung <ziozzang@gmail.com>
+* - Kubernetes _KUBE_RELEASE_
+- Automated Build Version
+- CRICTL_VERSION="_CRICTL_VERSION_"
+- CNI_VERSION="_CNI_VERSION_"
+- KUBE_RELEASE="_KUBE_RELEASE_"
