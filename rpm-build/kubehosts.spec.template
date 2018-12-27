@@ -84,46 +84,66 @@ mv {kubeadm,kubelet,kubectl} ${RPM_BUILD_ROOT}/usr/bin
 
 ####################################################
 %pre
-systemctl stop firewalld || true
-systemctl disable firewalld || true
-systemctl restart docker || true
+echo ">> Inside Pre Process <<"
+if [ $1 -eq 1 ]; then
+  echo ">> First install process"
+  systemctl stop firewalld || true
+  systemctl disable firewalld || true
+  systemctl restart docker || true
+  
+  # SELinux Turn-off
+  #=> https://kubernetes.io/docs/setup/independent/install-kubeadm/
+  setenforce 0
+  sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
-#rm -rf /etc/kubernetes /var/lib/etcd || true
+  #rm -rf /etc/kubernetes /var/lib/etcd || true
+
+else
+  echo ">> Upgrade process"
+fi
 
 %post
-
 echo ">> Inside Post Process <<"
-systemctl enable kubelet
-#systemctl
 
+systemctl daemon-reload
+
+if [ $1 -eq 1 ]; then
+  echo ">> First install process"
+  systemctl enable kubelet
+  systemctl start kubelet
+else
+  echo ">> Upgrade process"
+  systemctl restart kubelet
+fi
 
 ####################################################
 %preun
+echo ">> Inside Pre-Uninstall Process <<"
+if [ $1 -eq 1 ]; then
+  echo ">> Upgrade process"
+else
+  echo ">> Remove/Purge process"
+  # CleanUp Old configuration
+  #kubeadm reset -f || true
+  #weave reset --force || true
 
-# CleanUp Old configuration
-#kubeadm reset -f || true
-#weave reset --force || true
+  systemctl stop kubelet || true
+  systemctl disable kubelet || true
+  systemctl stop docker || true
 
-systemctl stop kubelet || true
-systemctl disable kubelet || true
-systemctl stop docker || true
-
-rm -rf /root/.kube
-rm -rf /root/.helm
-rm -rf /root/.token
-rm -rf /etc/cni/
-rm -rf /var/lib/cni/
-rm -rf /var/lib/kubelet/*
-rm -rf /var/lib/romana/
-
-# SELinux Turn-off
-#=> https://kubernetes.io/docs/setup/independent/install-kubeadm/
-setenforce 0
-sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+  rm -rf /root/.kube /root/.helm /root/.token || true
+  rm -rf /etc/cni/ /var/lib/cni/ || true
+  rm -rf /var/lib/kubelet/* /var/lib/romana/ || true
+fi
 
 %postun
 echo ">> Inside Uninstall Process <<"
-rm -rf /etc/kubernetes/
+if [ $1 -eq 1 ]; then
+    echo ">> Upgrade process"
+else
+  echo ">> Remove/Purge process"
+  rm -rf /etc/kubernetes/
+fi
 systemctl start docker || true
 
 ####################################################
