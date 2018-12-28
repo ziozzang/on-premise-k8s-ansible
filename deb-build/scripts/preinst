@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+echo ">> PreInst <<"
+if [ "$1" = "upgrade" ]; then
+  echo ">> Upgrade"
+else
+  echo ">> Pure Install"
+  systemctl stop firewalld || true
+  systemctl disable firewalld || true
+  systemctl restart docker || true
+  
+  # SELinux Turn-off
+  #=> https://kubernetes.io/docs/setup/independent/install-kubeadm/
+  setenforce 0
+  sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+  #rm -rf /etc/kubernetes /var/lib/etcd || true
+fi
+

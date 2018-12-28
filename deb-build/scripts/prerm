@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+echo ">> PreRM <<"
+if [ "$1" = "upgrade" ]; then
+  echo ">> Upgrade"
+else
+  echo ">> Pure Install"
+  # CleanUp Old configuration
+  #kubeadm reset -f || true
+  #weave reset --force || true
+
+  systemctl stop kubelet || true
+  systemctl disable kubelet || true
+  systemctl stop docker || true
+
+  rm -rf /root/.kube /root/.helm /root/.token || true
+  rm -rf /etc/cni/ /var/lib/cni/ || true
+  rm -rf /var/lib/kubelet/* /var/lib/romana/ || true
+fi

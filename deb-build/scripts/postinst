@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+echo ">> PostInst <<"
+
+systemctl daemon-reload
+
+if [ "$1" = "upgrade" ]; then
+  echo ">> Upgrade"
+  systemctl restart kubelet
+else
+  echo ">> Pure Install"
+  systemctl enable kubelet
+  systemctl start kubelet
+fi

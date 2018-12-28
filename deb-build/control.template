@@ -1,0 +1,17 @@
+Package: kubehosts 
+Version: _KUBE_RELEASE_
+Section: devel
+Priority: optional
+Architecture: amd64 
+#Depends: bash, systemd
+#Recommends: libsqlite3-dev
+Maintainer: Jioh L. Jung <ziozzang@gmail.com>
+Homepage: http://github.com/ziozzang
+Description: Kubernetes/K8S for Ubuntu/Debian Hosts(For Offline installation)
+  deb package repacked by Jioh L. Jung <ziozzang@gmail.com>
+  * _DATES_HERE_ Jioh L. Jung <ziozzang@gmail.com>
+  * - Kubernetes _KUBE_RELEASE_
+    - Automated Build Version
+    - CRICTL_VERSION="_CRICTL_VERSION_"
+    - CNI_VERSION="_CNI_VERSION_"
+    - KUBE_RELEASE="_KUBE_RELEASE_"

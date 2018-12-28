@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+echo ">> PostRM <<"
+if [ "$1" = "upgrade" ]; then
+  echo ">> Upgrade"
+else
+  echo ">> Pure Install"
+  rm -rf /etc/kubernetes/
+fi
+
+systemctl start docker || true
+
