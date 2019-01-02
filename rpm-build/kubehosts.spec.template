@@ -93,8 +93,8 @@ if [ $1 -eq 1 ]; then
   
   # SELinux Turn-off
   #=> https://kubernetes.io/docs/setup/independent/install-kubeadm/
-  setenforce 0
-  sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+  setenforce 0 || true
+  sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config || true
 
   #rm -rf /etc/kubernetes /var/lib/etcd || true
 
