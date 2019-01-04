@@ -1,0 +1,68 @@
+%define build_timestamp %(date +"%Y%m%d")
+
+Summary: helm newest-package
+Name: helm
+Version: _HELM_VERSION_
+Release: %{build_timestamp}
+License: Copyright info
+Group: Applications/System
+%description
+Helm binaries for Kubernetes/K8S Hosts(For Offline installation)
+  rpm package repacked by Jioh L. Jung <ziozzang@gmail.com>
+
+####################################################
+%prep
+# Prepare for build process.
+
+%build
+%install
+get_latest_release() {
+  curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
+    grep '"tag_name":' |                                            # Get tag line
+    sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
+}
+
+HELM_VERSION=${HELM_VERSION:-"$(get_latest_release 'helm/helm' | tr -dc '\.0-9')"}
+HELM_ARCH=${HELM_ARCH:-"linux-amd64"}
+
+#- Helm Version Strips
+HELM_VERSION_TMP="$(echo "${HELM_VERSION}"| grep -o -E '[0-9\.\-]+')"
+
+CURRENT_DIR=`pwd`
+echo "PWD: ${CURRENT_DIR}"
+
+mkdir -p tmp
+cd tmp
+curl https://storage.googleapis.com/kubernetes-helm/helm-v${HELM_VERSION_TMP}-${HELM_ARCH}.tar.gz | tar xvzf -
+cd ..
+
+mkdir -p ${RPM_BUILD_ROOT}/usr/bin
+cp -f ./tmp/${HELM_ARCH}/{helm,tiller} ${RPM_BUILD_ROOT}/usr/bin
+rm -rf ./tmp/
+
+####################################################
+
+####################################################
+%clean
+# After Build, clean up env.
+#rm -rf $RPM_BUILD_ROOT
+
+####################################################
+%files
+%defattr(-,root,root)
+%attr(0755,root,root)/usr/bin/*
+
+####################################################
+%pre
+%post
+
+####################################################
+%preun
+%postun
+
+####################################################
+%changelog
+* _DATES_HERE_ Jioh L. Jung <ziozzang@gmail.com>
+* - Helm: _HELM_VERSION_
+  - Automated Build Version
+
