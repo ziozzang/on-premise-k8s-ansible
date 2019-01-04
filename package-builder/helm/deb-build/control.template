@@ -1,0 +1,12 @@
+Package: helm
+Version: _HELM_VERSION_
+Section: devel
+Priority: optional
+Architecture: amd64 
+Maintainer: Jioh L. Jung <ziozzang@gmail.com>
+Homepage: http://github.com/ziozzang
+Description: Helm binaries for Kubernetes/K8S Hosts(For Offline installation)
+  deb package repacked by Jioh L. Jung <ziozzang@gmail.com>
+  * _DATES_HERE_ Jioh L. Jung <ziozzang@gmail.com>
+  * - Kubernetes _HELM_VERSION_
+    - Automated Build Version

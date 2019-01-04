@@ -1,0 +1,4 @@
+FROM ubuntu
+MAINTAINER Jioh L. Jung <ziozzang@gmail.com>
+#RUN yum -y upgrade && yum install -y rpm-build bash curl wget
+
